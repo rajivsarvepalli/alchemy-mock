@@ -124,7 +124,7 @@ session is unable to actually apply any filters so it returns everything::
    >>> session.query(Model).filter(Model.foo == 'bar').all()
    [Model(foo='bar'), Model(foo='baz')]
 
-Similarliy, ``UnifiedAlchemyMagicMock`` can partially fake deleting. Anything that can be
+Similarly, ``UnifiedAlchemyMagicMock`` can partially fake deleting. Anything that can be
 accessed with ``all`` can also be deleted. For example::
 
     >>> s = UnifiedAlchemyMagicMock()
@@ -137,9 +137,9 @@ accessed with ``all`` can also be deleted. For example::
     >>> s.query(SomeClass).all()
     []
 
-Note the limitation for dynamic sessions remains the same. Aditionally, the delete will not propagated across
+Note the limitation for dynamic sessions remains the same. Additionally, the delete will not be propagated across
 queries (only unified in the exact same query). As in if there are multiple queries in which the 'same'
-object is present, this library considers them seperate objects. For example::
+object is present, this library considers them separate objects. For example::
 
     >>> s = UnifiedAlchemyMagicMock(data=[
     ...     (
@@ -171,4 +171,4 @@ object is present, this library considers them seperate objects. For example::
     >>> s.query('foo').filter(c == 'one').filter(c == 'two').filter(c == 'three').all()
     [1, 2, 3]
 
-The item refered to by :code:`c == 'three'` is still present in the filtered query despite the invidual item being deleted.
+The item referred to by :code:`c == 'three'` is still present in the filtered query despite the individual item being deleted.
