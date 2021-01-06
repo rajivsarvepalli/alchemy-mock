@@ -280,6 +280,58 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         >>> s.query(SomeClass).filter(c == 'one').all()
         [1, 2]
 
+        # .delete()
+        >>> s = UnifiedAlchemyMagicMock(data=[
+        ...     (
+        ...         [mock.call.query('foo'),
+        ...          mock.call.filter(c == 'one', c == 'two')],
+        ...         [SomeClass(pk1=1, pk2=1), SomeClass(pk1=2, pk2=2)]
+        ...     ),
+        ...     (
+        ...         [mock.call.query('foo'),
+        ...          mock.call.filter(c == 'one', c == 'two'),
+        ...          mock.call.order_by(c)],
+        ...         [SomeClass(pk1=2, pk2=2), SomeClass(pk1=1, pk2=1)]
+        ...     ),
+        ...     (
+        ...         [mock.call.filter(c == 'three')],
+        ...         [SomeClass(pk1=3, pk2=3)]
+        ...     ),
+        ...     (
+        ...         [mock.call.query('foo'),
+        ...          mock.call.filter(c == 'one', c == 'two', c == 'three')],
+        ...         [SomeClass(pk1=1, pk2=1), SomeClass(pk1=2, pk2=2), SomeClass(pk1=3, pk2=3)]
+        ...     ),
+        ... ])
+
+        >>> s.query('foo').filter(c == 'three').all()
+        [3]
+        >>> s.query('foo').all()
+        []
+        >>> s.query('foo').filter(c == 'three').delete()
+        1
+        >>> s.query('foo').filter(c == 'three').all()
+        []
+        >>> s.query('foo').filter(c == 'one').filter(c == 'two').all()
+        [1, 2]
+        >>> s.query('foo').filter(c == 'one').filter(c == 'two').filter(c == 'three').all()
+        [1, 2, 3]
+        >>> s = UnifiedAlchemyMagicMock()
+        >>> s.add(SomeClass(pk1=1, pk2=1))
+        >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.query(SomeClass).all()
+        [1, 2]
+        >>> s.query(SomeClass).delete()
+        2
+        >>> s.query(SomeClass).all()
+        []
+        >>> s = UnifiedAlchemyMagicMock()
+        >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.query(SomeClass).delete()
+        1
+        >>> s.query(SomeClass).delete()
+        0
+
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
     """
@@ -483,48 +535,58 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
 
             for i in to_add:
                 self._mutate_data(i, *args[1:], **_kwargs)
-        
+
         elif _mock_name == "delete":
-            # a list of deleted items 
-            to_delete = list(self._fake_all(args, kwargs))
-            if to_delete:
-                query_call = mock.call.query(type(to_delete[0]))
-                mocked_data = next(
-                    iter(filter(lambda i: i[0] == [query_call], _mock_data)), None
-                )
-                if mocked_data:
-                    # remove objects based on the same instances
-                    for row in to_delete:
-                        mocked_data[1].remove(row)
+            # a list of deleted items
+            def _fake_all():
+                _kwargs = kwargs.copy()
+                _kwargs.pop("_mock_name")
+                _mock_name = "all"
+                _mock_default = self._mock_default
+                _mock_data = self._mock_data
 
-        def _fake_all(self, *args, **kwargs):
-            _mock_name = "all"
-            _mock_default = self._mock_default
-            _mock_data = self._mock_data
-
-            if _mock_data is not None:
-                previous_calls = [
-                    sqlalchemy_call(
-                        i, with_name=True, base_call=self.unify.get(i[0]) or Call
-                    )
-                    for i in self._get_previous_calls(self.mock_calls[:-1])
-                ]
-                sorted_mock_data = sorted(
-                    _mock_data, key=lambda x: len(x[0]), reverse=True
-                )
-                for calls, result in sorted_mock_data:
-                    calls = [
+                if _mock_data is not None:
+                    previous_calls = [
                         sqlalchemy_call(
                             i,
                             with_name=True,
                             base_call=self.unify.get(i[0]) or Call,
                         )
-                        for i in calls
+                        for i in self._get_previous_calls(self.mock_calls[:-1])
                     ]
-                    if all(c in previous_calls for c in calls):
-                        return self.boundary[_mock_name](
-                            result, *args, **kwargs
-                        )
+                    sorted_mock_data = sorted(
+                        _mock_data, key=lambda x: len(x[0]), reverse=True
+                    )
+                    for calls, result in sorted_mock_data:
+                        calls = [
+                            sqlalchemy_call(
+                                i,
+                                with_name=True,
+                                base_call=self.unify.get(i[0]) or Call,
+                            )
+                            for i in calls
+                        ]
+                        if all(c in previous_calls for c in calls):
+                            return self.boundary[_mock_name](
+                                result, *args, **_kwargs
+                            )
+                return self.boundary[_mock_name](
+                    _mock_default, *args, **_kwargs
+                )
 
-            return self.boundary[_mock_name](_mock_default, *args, **kwargs)
-            
+            to_delete = list(_fake_all())
+            num_deleted = len(to_delete)
+            if to_delete:
+                query_call = mock.call.query(type(to_delete[0]))
+                mocked_data = next(
+                    iter(filter(lambda i: i[0] == [query_call], _mock_data)),
+                    None,
+                )
+                if mocked_data:
+                    # remove objects based on the same instances
+                    num_deleted = len(to_delete)
+                    for row in to_delete:
+                        mocked_data[1].remove(row)
+            # we delete the data from the specific query
+            del to_delete
+            return num_deleted
