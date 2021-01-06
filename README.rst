@@ -2,13 +2,13 @@
 SQLAlchemy Mock
 ===============
 
-.. image:: https://badge.fury.io/py/alchemy-mock.png
+.. image:: https://badge.fury.io/py/alchemy-mock.svg
     :target: http://badge.fury.io/py/alchemy-mock
 
-.. image:: https://travis-ci.org/miki725/alchemy-mock.png?branch=master
+.. image:: https://travis-ci.org/miki725/alchemy-mock.svg?branch=master
     :target: https://travis-ci.org/miki725/alchemy-mock
 
-.. image:: https://coveralls.io/repos/miki725/alchemy-mock/badge.png?branch=master
+.. image:: https://coveralls.io/repos/miki725/alchemy-mock/badge.svg?branch=master
     :target: https://coveralls.io/r/miki725/alchemy-mock?branch=master
 
 SQLAlchemy mock helpers.
