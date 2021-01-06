@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
-import collections
 
 import six
 from sqlalchemy import func
 from sqlalchemy.sql.expression import column, or_
 
-from .compat import mock, Mapping
+from .compat import Mapping, mock
 from .utils import match_type
 
 
