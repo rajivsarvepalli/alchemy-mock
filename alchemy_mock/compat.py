@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
-import collections
 
 
 try:
@@ -10,8 +9,3 @@ except ImportError:  # pragma: no cover
         import mock
     except ImportError:  # pragma: no cover
         from unittest import mock  # noqa # pragma: no cover
-
-try:
-    collectionsAbc = collections.abc
-except AttributeError:  # pragma: no cover
-    collectionsAbc = collections  # noqa # pragma: no cover

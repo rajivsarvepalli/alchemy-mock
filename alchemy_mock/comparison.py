@@ -2,10 +2,11 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import six
+from six.moves.collections_abc import Mapping
 from sqlalchemy import func
 from sqlalchemy.sql.expression import column, or_
 
-from .compat import collectionsAbc, mock
+from .compat import mock
 from .utils import match_type
 
 
@@ -146,7 +147,7 @@ class ExpressionMatcher(PrettyExpression):
                     for i, j in six.moves.zip_longest(self.expr, other)
                 )
 
-            elif isinstance(self.expr, collectionsAbc.Mapping):
+            elif isinstance(self.expr, Mapping):
                 same_keys = self.expr.keys() == other.keys()
                 return same_keys and all(
                     _(self.expr[k]) == other[k] for k in self.expr.keys()

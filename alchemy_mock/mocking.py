@@ -552,44 +552,12 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
                 self._mutate_data(i, *args[1:], **_kwargs)
 
         elif _mock_name == "delete":
+
+            _kwargs = kwargs.copy()
+            # pretend like all is being called to get data
+            _kwargs["_mock_name"] = "all"
             # a list of deleted items
-            def _fake_all():
-                _kwargs = kwargs.copy()
-                _kwargs.pop("_mock_name")
-                _mock_name = "all"
-                _mock_default = self._mock_default
-                _mock_data = self._mock_data
-
-                if _mock_data is not None:
-                    previous_calls = [
-                        sqlalchemy_call(
-                            i,
-                            with_name=True,
-                            base_call=self.unify.get(i[0]) or Call,
-                        )
-                        for i in self._get_previous_calls(self.mock_calls[:-1])
-                    ]
-                    sorted_mock_data = sorted(
-                        _mock_data, key=lambda x: len(x[0]), reverse=True
-                    )
-                    for calls, result in sorted_mock_data:
-                        calls = [
-                            sqlalchemy_call(
-                                i,
-                                with_name=True,
-                                base_call=self.unify.get(i[0]) or Call,
-                            )
-                            for i in calls
-                        ]
-                        if all(c in previous_calls for c in calls):
-                            return self.boundary[_mock_name](
-                                result, *args, **_kwargs
-                            )
-                return self.boundary[_mock_name](
-                    _mock_default, *args, **_kwargs
-                )
-
-            to_delete = list(_fake_all())
+            to_delete = list(self._get_data(*args, **_kwargs))
             num_deleted = len(to_delete)
             if to_delete:
                 query_call = mock.call.query(type(to_delete[0]))
