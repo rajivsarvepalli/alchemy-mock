@@ -5,7 +5,7 @@ import six
 from sqlalchemy import func
 from sqlalchemy.sql.expression import column, or_
 
-from .compat import Mapping, mock
+from .compat import collectionsAbc, mock
 from .utils import match_type
 
 
@@ -146,7 +146,7 @@ class ExpressionMatcher(PrettyExpression):
                     for i, j in six.moves.zip_longest(self.expr, other)
                 )
 
-            elif isinstance(self.expr, Mapping):
+            elif isinstance(self.expr, collectionsAbc.Mapping):
                 same_keys = self.expr.keys() == other.keys()
                 return same_keys and all(
                     _(self.expr[k]) == other[k] for k in self.expr.keys()

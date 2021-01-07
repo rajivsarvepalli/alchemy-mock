@@ -10,6 +10,7 @@ from .compat import mock
 from .utils import (
     build_identity_map,
     copy_and_update,
+    get_item_attr,
     indexof,
     raiser,
     setattr_tmp,
@@ -267,18 +268,32 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         >>> s.query('foo').filter(c == 'three').get((4, 4))
 
         # dynamic session
+        >>> class Model(Base):
+        ...     __tablename__ = 'model_table'
+        ...     pk1 = Column(Integer, primary_key=True)
+        ...     name = Column(String)
+        ...     def __repr__(self):
+        ...         return str(self.pk1)
         >>> s = UnifiedAlchemyMagicMock()
         >>> s.add(SomeClass(pk1=1, pk2=1))
         >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.add_all([SomeClass(pk1=4, pk2=3)])
+        >>> s.add_all([Model(pk1=4, name='some_name')])
         >>> s.query(SomeClass).all()
-        [1, 2]
+        [1, 2, 4]
         >>> s.query(SomeClass).get((1, 1))
         1
         >>> s.query(SomeClass).get((2, 2))
         2
         >>> s.query(SomeClass).get((3, 3))
         >>> s.query(SomeClass).filter(c == 'one').all()
-        [1, 2]
+        [1, 2, 4]
+        >>> s.query(SomeClass).get((4, 3))
+        4
+        >>> s.query(SomeClass).get({"pk2": 3, "pk1": 4})
+        4
+        >>> s.query(Model).get(4)
+        4
 
         # .delete()
         >>> s = UnifiedAlchemyMagicMock(data=[
@@ -360,7 +375,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
             if x
             else None
         ),
-        "get": lambda x, idmap: build_identity_map(x).get(idmap),
+        "get": lambda x, idmap: get_item_attr(build_identity_map(x), idmap),
     }
     unify = {
         "query": None,
